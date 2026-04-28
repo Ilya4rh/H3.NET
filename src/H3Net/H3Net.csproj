@@ -3,7 +3,26 @@
     <PropertyGroup>
         <Nullable>enable</Nullable>
         <TargetFrameworks>netstandard2.1;net8.0</TargetFrameworks>
-        <LangVersion>default</LangVersion>
+        <LangVersion>latest</LangVersion>
+
+        <PackageId>H3.NET</PackageId>
+        <Version>0.1.0</Version>
+        <Authors>Ilya4rh</Authors>
+
+        <Description>C# implementation of Uber H3 geospatial indexing system</Description>
+        <PackageTags>h3 geospatial hexagon spatial-indexing</PackageTags>
+        
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        
+        <RepositoryUrl>https://github.com/Ilya4rh/H3.NET</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/Ilya4rh/H3.NET</PackageProjectUrl>
+
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     </PropertyGroup>
 
+    <ItemGroup>
+        <None Include="LICENSE" Pack="true" PackagePath="" />
+        <None Include="README.md" Pack="true" PackagePath="" />
+    </ItemGroup>
 </Project>
