@@ -6,7 +6,7 @@
         <LangVersion>latest</LangVersion>
 
         <PackageId>H3.NET</PackageId>
-        <Version>0.1.0</Version>
+        <Version>0.2.0</Version>
         <Authors>Ilya4rh</Authors>
 
         <Description>C# implementation of Uber H3 geospatial indexing system</Description>
