@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using H3Net.Constants;
 using H3Net.Enums;
 using H3Net.Extensions;
@@ -19,19 +21,38 @@ internal static class Algorithm
         Direction.IjAxesDigit
     ];
     
-    public static List<H3Index> GetGridDisk(H3Index index, int diskSize)
+    public static IEnumerable<H3Index> TryGetGridDisk(H3Index origin, int diskSize)
     {
-        if (diskSize < 0)
+        if (TryGridDiskWithoutPentagons(origin, diskSize, out var result))
+            return result;
+
+        if (!TryGetMaxIndexesCount(diskSize, out var maxIndexesCount))
         {
             return [];
         }
+        
+        var newResult = new H3Index[maxIndexesCount];
+        var distances = new int[maxIndexesCount];
 
-        var result = new List<H3Index> { index };
-        var distances = new List<double> { 0d };
+        return GetGridDiskInternal(origin, diskSize, newResult, distances, maxIndexesCount, 0)
+            ? newResult.Where(index => index.ToString() != "0")
+            : [];
+    }
+
+    private static bool TryGridDiskWithoutPentagons(H3Index index, int diskSize, out List<H3Index> result)
+    {
+        result = [];
+        
+        if (diskSize < 0)
+        {
+            return false;
+        }
+
+        result.Add(index);
 
         if (index.IsPentagon())
         {
-            return [];
+            return false;
         }
 
         var ring = 1;
@@ -43,20 +64,18 @@ internal static class Algorithm
         {
             if ((Direction)direction == Direction.CenterDigit && i == 0)
             {
-                if (!TryGetNeighbor(Direction.AxesDigit, ref rotations, ref index) || index.IsPentagon())
+                if (!TryGetNeighbor(index, Direction.AxesDigit, ref rotations, ref index) || index.IsPentagon())
                 {
-                    return [];
+                    return false;
                 }
             }
             
-            if (!TryGetNeighbor(Directions[direction], ref rotations, ref index))
+            if (!TryGetNeighbor(index, Directions[direction], ref rotations, ref index))
             {
-                return result;
+                return true;
             }
             
             result.Add(index);
-            distances.Add(ring);
-
             i++;
 
             if (i == ring)
@@ -72,14 +91,14 @@ internal static class Algorithm
 
             if (index.IsPentagon())
             {
-                return [];
+                return false;
             }
         }
 
-        return result;
+        return true;
     }
 
-    private static bool TryGetNeighbor(Direction direction, ref int rotations, ref H3Index neighbor)
+    private static bool TryGetNeighbor(H3Index origin, Direction direction, ref int rotations, ref H3Index neighbor)
     {
         if (direction is < Direction.CenterDigit or >= Direction.InvalidDigit)
         {
@@ -94,37 +113,37 @@ internal static class Algorithm
         }
 
         var newRotations = 0;
-        var oldBaseCell = neighbor.GetBaseCell();
+        var oldBaseCell = origin.GetBaseCell();
 
         if (oldBaseCell is < 0 or >= BaseCellConstants.NumBaseCells)
         {
             return false;
         }
         
-        var oldLeadingDigit = neighbor.GetLeadingNonZeroDigit();
-        var resolution = neighbor.GetResolution() - 1;
+        var oldLeadingDigit = origin.GetLeadingNonZeroDigit();
+        var resolution = origin.GetResolution() - 1;
 
         while (true)
         {
             if (resolution == -1)
             {
-                neighbor = neighbor.SetBaseCell(BaseCellConstants.BaseCellNeighbors[oldBaseCell, (int)direction]);
+                origin = origin.SetBaseCell(BaseCellConstants.BaseCellNeighbors[oldBaseCell, (int)direction]);
                 newRotations = BaseCellConstants.BaseCellNeighbor60CcwRots[oldBaseCell, (int)direction];
 
-                if (neighbor.GetBaseCell() == BaseCellConstants.InvalidBaseCell)
+                if (origin.GetBaseCell() == BaseCellConstants.InvalidBaseCell)
                 {
-                    neighbor = neighbor.SetBaseCell(
+                    origin = origin.SetBaseCell(
                         BaseCellConstants.BaseCellNeighbors[oldBaseCell, (int)Direction.IkAxesDigit]);
                     newRotations = BaseCellConstants.BaseCellNeighbor60CcwRots[oldBaseCell, (int)Direction.IkAxesDigit];
 
-                    neighbor = neighbor.Rotate60Ccw();
+                    origin = origin.Rotate60Ccw();
                     rotations += 1;
                 }
                 
                 break;
             }
 
-            var oldDigit = neighbor.GetIndexDigit(resolution + 1);
+            var oldDigit = origin.GetIndexDigit(resolution + 1);
             var oldDirection = (Direction)oldDigit;
             Direction nextDirection;
                 
@@ -135,13 +154,13 @@ internal static class Algorithm
 
             if (ResolutionUtils.IsResolutionThirdClass(resolution + 1))
             {
-                neighbor = neighbor.SetIndexDigit(resolution + 1,
+                origin = origin.SetIndexDigit(resolution + 1,
                     DirectionConstants.NewDigitIi[oldDigit, (int)direction]);
                 nextDirection = DirectionConstants.NewAdjustmentIi[oldDigit, (int)direction];
             }
             else
             {
-                neighbor = neighbor.SetIndexDigit(resolution + 1,
+                origin = origin.SetIndexDigit(resolution + 1,
                     DirectionConstants.NewDigitIii[oldDigit, (int)direction]);
                 nextDirection = DirectionConstants.NewAdjustmentIii[oldDigit, (int)direction];
             }
@@ -156,14 +175,14 @@ internal static class Algorithm
                 break;
             }
         }
-        var newBaseCell = neighbor.GetBaseCell();
+        var newBaseCell = origin.GetBaseCell();
         var newBaseCellData = BaseCellConstants.BaseCells[newBaseCell];
 
         if (newBaseCellData.IsPentagon)
         {
             var alreadyAdjustedKSubsequence = 0;
 
-            var leadingNonZeroDigit = neighbor.GetLeadingNonZeroDigit();
+            var leadingNonZeroDigit = origin.GetLeadingNonZeroDigit();
 
             if (leadingNonZeroDigit == Direction.KAxesDigit)
             {
@@ -171,9 +190,9 @@ internal static class Algorithm
                 {
                     var oldBaseCellData = BaseCellConstants.BaseCells[oldBaseCell];
 
-                    neighbor = newBaseCellData.IsCwOffset(oldBaseCellData.HomeFaceIjk.Face)
-                        ? neighbor.Rotate60Cw()
-                        : neighbor.Rotate60Ccw();
+                    origin = newBaseCellData.IsCwOffset(oldBaseCellData.HomeFaceIjk.Face)
+                        ? origin.Rotate60Cw()
+                        : origin.Rotate60Ccw();
 
                     alreadyAdjustedKSubsequence++;
                 }
@@ -184,11 +203,11 @@ internal static class Algorithm
                         case Direction.CenterDigit:
                             return false;
                         case Direction.JkAxesDigit:
-                            neighbor = neighbor.Rotate60Ccw();
+                            origin = origin.Rotate60Ccw();
                             rotations++;
                             break;
                         case Direction.IkAxesDigit:
-                            neighbor = neighbor.Rotate60Cw();
+                            origin = origin.Rotate60Cw();
                             rotations += 5;
                             break;
                         default:
@@ -199,12 +218,12 @@ internal static class Algorithm
 
             for (var i = 0; i < newRotations; i++)
             {
-                neighbor = neighbor.RotatePent60Ccw();
+                origin = origin.RotatePent60Ccw();
             }
 
             if (oldBaseCell != newBaseCell)
             {
-                leadingNonZeroDigit = neighbor.GetLeadingNonZeroDigit();
+                leadingNonZeroDigit = origin.GetLeadingNonZeroDigit();
                 
                 if (IsBaseCellPolarPentagon(newBaseCell))
                 {
@@ -223,10 +242,11 @@ internal static class Algorithm
         {
             for (var i = 0; i < newRotations; i++)
             {
-                neighbor = neighbor.Rotate60Ccw();
+                origin = origin.Rotate60Ccw();
             }
         }
 
+        neighbor = origin;
         rotations = (rotations + newRotations) % 6;
         
         return true;
@@ -235,5 +255,85 @@ internal static class Algorithm
     private static bool IsBaseCellPolarPentagon(int baseCell)
     {
         return baseCell is 4 or 117;
+    }
+    
+    private static bool TryGetMaxIndexesCount(int diskSize, out long maxIndexesCount)
+    {
+        maxIndexesCount = 0;
+        
+        switch (diskSize)
+        {
+            case < 0:
+                return false;
+            case >= ResolutionConstants.MaxCellsCount:
+                return TryGetNumCells(ResolutionConstants.MaxResolution, out maxIndexesCount);
+            default:
+                maxIndexesCount = 3L * diskSize * (diskSize + 1L) + 1L;
+        
+                return true;
+        }
+    }
+
+    private static bool TryGetNumCells(int res, out long result)
+    {
+        result = 0;
+        
+        if (res is < 0 or > ResolutionConstants.MaxResolution)
+        {
+            return false;
+        }
+
+        result = 2L + 120L * (long)Math.Pow(7, res);
+        
+        return true;
+    }
+    
+    private static bool GetGridDiskInternal(
+        H3Index origin, 
+        int diskSize,
+        H3Index[] result,
+        int[] distances, 
+        long maxIndexesCount, 
+        int currentDiskSize)
+    {
+        var off = (long)(origin.Value % (ulong)maxIndexesCount);
+
+        while (result[off].Value != 0 && result[off].Value != origin.Value)
+        {
+            off = (off + 1) % maxIndexesCount;
+        }
+
+        if (result[off].Value == origin.Value && distances[off] <= currentDiskSize)
+        {
+            return true;
+        }
+
+        result[off] = origin;
+        distances[off] = currentDiskSize;
+
+        if (currentDiskSize >= diskSize)
+        {
+            return true;
+        }
+
+        for (var i = 0; i < 6; i++)
+        {
+            var rotations = 0;
+            var nextNeighbor = default(H3Index);
+
+            var success = TryGetNeighbor(origin, Directions[i], ref rotations, ref nextNeighbor);
+
+            if (!success)
+            {
+                continue;
+            }
+            
+            if (!GetGridDiskInternal(nextNeighbor, diskSize, result, distances, maxIndexesCount, currentDiskSize + 1))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

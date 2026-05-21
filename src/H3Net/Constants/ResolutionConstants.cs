@@ -2,6 +2,10 @@
 
 internal static class ResolutionConstants
 {
+    public const int MaxCellsCount = 13780510;
+
+    public const int MaxResolution = 15;
+    
     public static readonly int[] MaxDimBySecondClassResolution =
     [
         2,        // res  0
