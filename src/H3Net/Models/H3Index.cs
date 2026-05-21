@@ -1,4 +1,5 @@
-﻿using H3Net.Constants;
+﻿using System.Globalization;
+using H3Net.Constants;
 using H3Net.Enums;
 using H3Net.Extensions;
 
@@ -25,7 +26,7 @@ public readonly struct H3Index
     private const int H3ResOffset = 52;
     private const int H3ReservedOffset = 56;
     private const int H3PerDigitOffset = 3;
-    
+
     private const int MaxH3Res = 15;
 
     private const ulong H3HighBitMask = 1UL << H3MaxOffset;
@@ -120,7 +121,7 @@ public readonly struct H3Index
 
         return baseCellData.IsPentagon && leadingNonZeroDigit == Direction.CenterDigit;
     }
-    
+
     internal Direction GetLeadingNonZeroDigit()
     {
         var resolution = GetResolution();
@@ -146,7 +147,7 @@ public readonly struct H3Index
 
         return new H3Index((Value & ~mask) | ((ulong)digit << shift));
     }
-    
+
     internal H3Index SetIndexDigit(int res, Direction direction)
     {
         return SetIndexDigit(res, (int)direction);
@@ -205,6 +206,20 @@ public readonly struct H3Index
         }
 
         return index;
+    }
+    
+    public static bool TryParseH3String(string h3String, out H3Index index)
+    {
+        if (ulong.TryParse(h3String, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var value))
+        {
+            index = new H3Index(value);
+            
+            return true;
+        }
+
+        index = default;
+        
+        return false;
     }
 
     public override string ToString()
