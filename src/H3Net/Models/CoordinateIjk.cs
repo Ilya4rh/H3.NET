@@ -35,6 +35,20 @@ internal readonly struct CoordinateIjk : IEquatable<CoordinateIjk>
         new(1, 0, 3)
     ];
     
+    private static readonly CoordinateIjk[] Ap3DownBasis =
+    [
+        new(2, 0, 1),
+        new(1, 2, 0),
+        new(0, 1, 2)
+    ];
+    
+    private static readonly CoordinateIjk[] Ap3DownBasisRotated =
+    [
+        new(2, 1, 0),
+        new(0, 2, 1),
+        new(1, 0, 2)
+    ];
+    
     public CoordinateIjk UpAp7()
     {
         var i = I - K;
@@ -55,6 +69,28 @@ internal readonly struct CoordinateIjk : IEquatable<CoordinateIjk>
         var newJ = Round((3 * j - i) * OneSeventh);
 
         return new CoordinateIjk(newI, newJ, 0).Normalize();
+    }
+
+    public CoordinateIjk DownAp3()
+    {
+        var i = Ap3DownBasis[0] * I;
+        var j = Ap3DownBasis[1] * J;
+        var k = Ap3DownBasis[2] * K;
+
+        var newCoordinate = i + j + k;
+
+        return newCoordinate.Normalize();
+    }
+    
+    public CoordinateIjk DownAp3Rotated()
+    {
+        var i = Ap3DownBasisRotated[0] * I;
+        var j = Ap3DownBasisRotated[1] * J;
+        var k = Ap3DownBasisRotated[2] * K;
+
+        var newCoordinate = i + j + k;
+
+        return newCoordinate.Normalize();
     }
     
     public CoordinateIjk Normalize()

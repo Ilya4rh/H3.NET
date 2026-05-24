@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using H3Net.Algorithms;
 using H3Net.Constants;
 using H3Net.Extensions;
 using H3Net.Models;
@@ -55,7 +56,7 @@ public static class H3
 
     public static IEnumerable<H3Index> GetGridDisk(H3Index index, int diskSize)
     {
-        return Algorithm.TryGetGridDisk(index, diskSize);
+        return GridDiskAlgorithm.GetGridDisk(index, diskSize);
     }
     
     public static IEnumerable<string> GetGridDisk(string h3String, int diskSize)
@@ -65,8 +66,22 @@ public static class H3
             throw new ArgumentException("Invalid H3 String", nameof(h3String));
         }
         
-        var indexes = Algorithm.TryGetGridDisk(h3Index, diskSize);
+        var indexes = GridDiskAlgorithm.GetGridDisk(h3Index, diskSize);
         
         return indexes.Select(index => index.ToString()); 
+    }
+
+    public static IEnumerable<H3Index> GetH3IndexesInRadius(
+        double latitudeDegrees, 
+        double longitudeDegrees,
+        int resolution, 
+        double radiusInMeters)
+    {
+        return IndexesInRadiusAlgorithm.GetIndexes(latitudeDegrees, longitudeDegrees, resolution, radiusInMeters);
+    }
+
+    public static List<GeoCoordinate> GetCellBoundariesCoordinates(H3Index index)
+    {
+        return CellBoundariesAlgorithm.GetCoordinates(index);
     }
 }

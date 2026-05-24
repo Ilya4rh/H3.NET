@@ -152,7 +152,7 @@ internal static class H3IndexCreator
         return possibleOverage;
     }
     
-    private static Overage AdjustOverageSecondClass(int resolution, bool isPentLeading4, bool isSubstrate, ref FaceIjk faceIjk)
+    public static Overage AdjustOverageSecondClass(int resolution, bool isPentLeading4, bool isSubstrate, ref FaceIjk faceIjk)
     {
         var overage = Overage.NoOverage;
         var maxDim = ResolutionConstants.MaxDimBySecondClassResolution[resolution];

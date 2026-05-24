@@ -7,9 +7,9 @@ using H3Net.Extensions;
 using H3Net.Models;
 using H3Net.Utils;
 
-namespace H3Net;
+namespace H3Net.Algorithms;
 
-internal static class Algorithm
+internal static class GridDiskAlgorithm
 {
     private static readonly Direction[] Directions =
     [
@@ -21,7 +21,7 @@ internal static class Algorithm
         Direction.IjAxesDigit
     ];
     
-    public static IEnumerable<H3Index> TryGetGridDisk(H3Index origin, int diskSize)
+    public static IEnumerable<H3Index> GetGridDisk(H3Index origin, int diskSize)
     {
         if (TryGridDiskWithoutPentagons(origin, diskSize, out var result))
             return result;

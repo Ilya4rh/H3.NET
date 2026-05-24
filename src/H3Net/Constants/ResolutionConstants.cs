@@ -47,4 +47,24 @@ internal static class ResolutionConstants
         -1,      // res 15
         5764801  // res 16
     ];
+
+    public static readonly double[] AverageBoundaryLengthsInMeters =
+    [
+        1281256.011,  // res 0
+        483056.8391,  // res 1
+        182512.9565,  // res 2
+        68979.22179,  // res 3
+        26071.75968,  // res 4
+        9854.090990,  // res 5
+        3724.532667,  // res 6
+        1406.475763,  // res 7
+        531.414010,   // res 8
+        200.786148,   // res 9
+        75.863783,    // res 10
+        28.663897,    // res 11
+        10.830188,    // res 12
+        4.092010,     // res 13
+        1.546100,     // res 14
+        0.584169,     // res 15
+    ];
 }

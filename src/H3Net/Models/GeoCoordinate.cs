@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using H3Net.Constants;
 using H3Net.Utils;
 
@@ -113,6 +114,22 @@ public readonly struct GeoCoordinate
         }
 
         return new GeoCoordinate(lat2, lng2);
+    }
+
+    internal double DistanceTo(GeoCoordinate target)
+    {
+        const double earthRadiusMeters = 6371007.180918;
+    
+        var deltaLat = target.LatitudeRadians - LatitudeRadians;
+        var deltaLng = target.LongitudeRadians - LongitudeRadians;
+    
+        var a = Math.Sin(deltaLat / 2) * Math.Sin(deltaLat / 2) +
+                Math.Cos(LatitudeRadians) * Math.Cos(target.LatitudeRadians) *
+                Math.Sin(deltaLng / 2) * Math.Sin(deltaLng / 2);
+    
+        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+    
+        return earthRadiusMeters * c;
     }
     
     private static double ConstrainLng(double lng)
